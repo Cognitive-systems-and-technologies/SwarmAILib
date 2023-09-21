@@ -26,14 +26,17 @@ namespace SwarmAILib
             int currentCol = 0;
             Random random = new Random();
 
+            // проходимся по лабиринту, пока не найдём из него выход
             while (!maze.IsExit(currentRow, currentCol))
             {
                 path.Add((currentRow, currentCol));
+                // вычисляем возможные для перехода ячейка
                 List<(int, int)> possibleMoves = GetPossibleMoves(currentRow, currentCol, maze);
 
                 if (possibleMoves.Count == 0)
                     break;
 
+            
                 int chosenMoveIndex = random.Next(possibleMoves.Count);
                 (currentRow, currentCol) = possibleMoves[chosenMoveIndex];
             }
@@ -65,9 +68,11 @@ namespace SwarmAILib
             this.iterations = iterations;
         }
 
+        // поиск кратчайшего пути в лабиринте
         public List<(int, int)> FindShortestPath()
         {
             List<(int, int)> shortestPath = null;
+            // длина кратчайшего пути
             int shortestPathLength = int.MaxValue;
 
             for (int iter = 0; iter < iterations; iter++)
@@ -75,6 +80,7 @@ namespace SwarmAILib
                 List<(int, int)> currentShortestPath = null;
                 int currentShortestPathLength = int.MaxValue;
 
+                // перебираем всех пчёл и получаем информацию о каждом
                 for (int beeIndex = 0; beeIndex < beeCount; beeIndex++)
                 {
                     Bee bee = new Bee();
@@ -89,6 +95,7 @@ namespace SwarmAILib
                     }
                 }
 
+                // выбираем кратчайший путь в зависимости от информации, полученной от пчёл
                 if (currentShortestPathLength < shortestPathLength)
                 {
                     shortestPathLength = currentShortestPathLength;

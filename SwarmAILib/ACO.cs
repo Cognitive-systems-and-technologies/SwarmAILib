@@ -52,11 +52,17 @@ namespace SwarmAILib
         private double[,] pheromones;
         private double alpha;
         private double beta;
+        // скорость испарения феромона
         private double evaporationRate;
+        // начальное значение феромона
         private double initialPheromone;
+        // количество "муравьёв"
         private int antCount;
+        // количество итераций алгоритма
         private int iterations;
+        
 
+        // конструктор класса
         public AntColonyAlgorithm(Maze maze, int antCount, int iterations, double alpha, double beta, double evaporationRate, double initialPheromone)
         {
             this.maze = maze;
@@ -148,8 +154,11 @@ namespace SwarmAILib
                         continue;
                     }
 
+                    // вычисляем количество феромона в данной точке
                     double pheromone = Math.Pow(pheromones[i, j], alpha);
+                    // вычисляем эвристику перехода в данную ячейку
                     double heuristic = Math.Pow(1.0 / (GetDistance(row, col, i, j) + 1.0), beta);
+                    // вычисляем вероятность перехода в точку i, j
                     probabilities[i, j] = pheromone * heuristic;
                     totalProbability += probabilities[i, j];
                 }
