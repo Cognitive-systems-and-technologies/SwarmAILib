@@ -2,7 +2,11 @@
 
 namespace SwarmAILib
 {
-
+    public struct Coordinates
+    {
+        public int x;
+        public int y;
+    }
     public class Maze
     {
         private int[,] grid;
@@ -37,12 +41,7 @@ namespace SwarmAILib
 
         public bool IsWall(int row, int col)
         {
-            if (row < 0 || row >= rows || col < 0 || col >= columns)
-            {
-                throw new ArgumentOutOfRangeException("Invalid coordinates");
-            }
-
-            return grid[row, col] == 0;
+            return row < 0 || row >= rows || col < 0 || col >= columns || grid[row, col] == 0;
         }
 
         public bool IsExit(int row, int col)
@@ -52,7 +51,7 @@ namespace SwarmAILib
                 throw new ArgumentOutOfRangeException("Invalid coordinates");
             }
 
-            return row == 0 || row == rows - 1 || col == 0 || col == columns - 1;
+            return (row == rows - 1 && col == columns - 1);
         }
 
         public int GetRows()
@@ -65,6 +64,14 @@ namespace SwarmAILib
             return columns;
         }
 
+        public void SetPath(List<Coordinates> path)
+        {
+            foreach (Coordinates c in path)
+            {
+                grid[c.x, c.y] = -1;
+            }
+        }
+
         public void Print()
         {
             for (int i = 0; i < rows; i++)
@@ -75,17 +82,29 @@ namespace SwarmAILib
                     {
                         Console.Write(" "); // свободный проход
                     }
+                    else if (grid[i, j] == -1)
+                    {
+                        Console.Write("*"); // проход через лабиринт
+                    }
                     else
                     {
                         Console.Write("#"); // препятствие
                     }
                 }
+                Console.Write("=");
                 Console.WriteLine();
             }
+
+            for (int i = 0; i <= columns; i++)
+            {
+                Console.Write("=");
+            }
+            Console.WriteLine();
         }
+
     }
 
 
-   
+
 
 }

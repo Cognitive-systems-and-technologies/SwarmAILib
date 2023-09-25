@@ -1,24 +1,15 @@
-class Program
-{
-    static void Main(string[] args)
+    class Program
     {
-        // Создаем новый лабиринт
-        Maze maze = new Maze(10, 10);
-
-        // Создаем новый экземпляр алгоритма колонии муравьев
-        AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(maze, 100, 1000, 1.0, 1.0, 0.5, 1.0);
-
-        // Запускаем алгоритм
-        antColonyAlgorithm.Run();
-
-        // Выводим результат алгоритма
-        for (int i = 0; i < maze.GetRows(); i++)
+        static void Main(string[] args)
         {
-            for (int j = 0; j < maze.GetColumns(); j++)
-            {
-                Console.Write(antColonyAlgorithm.GetPheromoneLevel(i, j) + " ");
-            }
-            Console.WriteLine();
+            Maze maze = new Maze(10, 10);
+            maze.Print();
+
+            // Создаем новый экземпляр алгоритма колонии муравьев
+            // некоторые лабиринты могут не иметь пути из точки входа в точку выхода, следует поэкспериментировать с параметрами модели
+            AntColonyAlgorithm aco = new AntColonyAlgorithm(maze, 100, 100, 1.0, 1.0, 0.5, 0);
+            aco.Run();
+            aco.Print();
+
         }
     }
-}

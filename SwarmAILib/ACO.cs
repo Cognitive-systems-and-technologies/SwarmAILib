@@ -8,30 +8,42 @@ namespace SwarmAILib
 {
     public class Ant
     {
-        private int currentRow;
-        private int currentCol;
         private bool[,] visited;
+        private List<Coordinates> path;
+        private Coordinates currentPos;
 
-        public Ant()
+        public Ant(Maze m)
         {
-            currentRow = 0;
-            currentCol = 0;
+            Coordinates currentPos;
+            visited = new bool[m.GetRows(), m.GetColumns()];
+            currentPos.x = 0;
+            currentPos.y = 0;
+            path = new List<Coordinates>();
+            path.Add(currentPos);
         }
 
         public void MoveTo(int row, int col)
         {
-            currentRow = row;
-            currentCol = col;
+            currentPos.x = col;
+            currentPos.y = row;
+            path.Add(currentPos);
         }
 
+
+        public void Reset()
+        {
+            path = new List<Coordinates>();
+            this.MoveTo(0, 0);
+
+        }
         public int GetCurrentRow()
         {
-            return currentRow;
+            return currentPos.y;
         }
 
         public int GetCurrentCol()
         {
-            return currentCol;
+            return currentPos.x;
         }
 
         public void SetVisited(int row, int col)
@@ -43,6 +55,17 @@ namespace SwarmAILib
         {
             return visited[row, col];
         }
+
+        public int GetPathLength()
+        {
+            return path.Count;
+        }
+
+        public List<Coordinates> GetPath()
+        {
+            return path;
+        }
+
     }
 
     public class AntColonyAlgorithm
@@ -52,17 +75,11 @@ namespace SwarmAILib
         private double[,] pheromones;
         private double alpha;
         private double beta;
-        // скорость испарения феромона
         private double evaporationRate;
-        // начальное значение феромона
         private double initialPheromone;
-        // количество "муравьёв"
         private int antCount;
-        // количество итераций алгоритма
         private int iterations;
-        
 
-        // конструктор класса
         public AntColonyAlgorithm(Maze maze, int antCount, int iterations, double alpha, double beta, double evaporationRate, double initialPheromone)
         {
             this.maze = maze;
@@ -92,14 +109,20 @@ namespace SwarmAILib
                 // Создаем муравьев
                 for (int antIndex = 0; antIndex < antCount; antIndex++)
                 {
-                    ants[antIndex] = new Ant();
+                    ants[antIndex] = new Ant(maze);
                 }
 
                 // Перемещаем муравьев до выхода из лабиринта
                 for (int antIndex = 0; antIndex < antCount; antIndex++)
                 {
+
                     while (!maze.IsExit(ants[antIndex].GetCurrentRow(), ants[antIndex].GetCurrentCol()))
                     {
+                        // если путь больше, чем количество клеток в лабиринте, отбрасываем его
+                        if (ants[antIndex].GetPathLength() > maze.GetColumns() * maze.GetRows())
+                        {
+                            break;
+                        }
                         MoveAnt(antIndex);
                     }
                 }
@@ -122,8 +145,12 @@ namespace SwarmAILib
                         }
                     }
                 }
+
+                // устанавливаем кратчайший путь в лабиринте
+                maze.SetPath(GetShortestPath());
             }
         }
+
         private void MoveAnt(int antIndex)
         {
             // Выбираем следующую позицию на основе вероятности и эвристики
@@ -143,10 +170,15 @@ namespace SwarmAILib
             double totalProbability = 0.0;
             double[,] probabilities = new double[maze.GetRows(), maze.GetColumns()];
 
+            int startY = row == 0 ? 0 : row - 1;
+            int startX = col == 0 ? 0 : col - 1;
+            int endY = row == maze.GetRows() - 1 ? row : maze.GetRows() + 1;
+            int endX = row == maze.GetColumns() - 1 ? col : maze.GetColumns() + 1;
+
             // Вычисляем вероятность для каждой соседней позиции
-            for (int i = 0; i < maze.GetRows(); i++)
+            for (int i = startY; i < endY; i++)
             {
-                for (int j = 0; j < maze.GetColumns(); j++)
+                for (int j = startX; j < endX; j++)
                 {
                     if (maze.IsWall(i, j) || ants.Any(ant => ant.GetCurrentRow() == i && ant.GetCurrentCol() == j))
                     {
@@ -154,11 +186,8 @@ namespace SwarmAILib
                         continue;
                     }
 
-                    // вычисляем количество феромона в данной точке
                     double pheromone = Math.Pow(pheromones[i, j], alpha);
-                    // вычисляем эвристику перехода в данную ячейку
                     double heuristic = Math.Pow(1.0 / (GetDistance(row, col, i, j) + 1.0), beta);
-                    // вычисляем вероятность перехода в точку i, j
                     probabilities[i, j] = pheromone * heuristic;
                     totalProbability += probabilities[i, j];
                 }
@@ -168,9 +197,9 @@ namespace SwarmAILib
             double randomValue = new Random().NextDouble() * totalProbability;
             double currentProbability = 0.0;
 
-            for (int i = 0; i < maze.GetRows(); i++)
+            for (int i = 0; i < probabilities.GetLength(0); i++)
             {
-                for (int j = 0; j < maze.GetColumns(); j++)
+                for (int j = 0; j < probabilities.GetLength(1); j++)
                 {
                     if (probabilities[i, j] > 0)
                     {
@@ -190,6 +219,11 @@ namespace SwarmAILib
                 }
             }
 
+            if (maze.IsWall(nextRow, nextCol))
+            {
+                return (row, col);
+            }
+
             return (nextRow, nextCol);
         }
 
@@ -198,6 +232,36 @@ namespace SwarmAILib
         {
             return Math.Abs(row1 - row2) + Math.Abs(col1 - col2);
         }
+
+        public List<Coordinates> GetShortestPath()
+        {
+
+            // устанавливаем самый длинный возможный путь
+            int pathLength = maze.GetColumns() * maze.GetRows();
+            List<Coordinates> result = new List<Coordinates>();
+
+            for (int i = 0; i < antCount; i++)
+            {
+                if (ants[i].GetPathLength() < pathLength &&
+                    maze.IsExit(ants[i].GetCurrentRow(), ants[i].GetCurrentCol()))
+                {
+                    pathLength = ants[i].GetPathLength();
+                    result = ants[i].GetPath();
+                }
+            }
+            return result;
+        }
+
+        public void Print()
+        {
+            maze.Print();
+        }
+
+        public void PrintWithPheromones()
+        {
+            maze.Print();
+        }
+
 
     }
 }
